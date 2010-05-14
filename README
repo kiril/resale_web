@@ -1,0 +1,1 @@
+JSON methods return {'result':'OK'} or {'result':'failure', 'message':...}
