@@ -1,9 +1,11 @@
+import os
+import logging
+
 import tornado.httpserver
 import tornado.ioloop
 import tornado.web
 import tornado.autoreload
 
-import logging
 logging.basicConfig(filename='/var/log/apache2/resale.log', level=logging.DEBUG)
 
 from resalepost import ResalePostHandler, ResalePostViewHandler
@@ -18,6 +20,14 @@ class AuthHandler(tornado.web.RequestHandler):
     # TODO: authentication
     pass
 
+settings = {
+    "static_path": os.path.join(os.path.dirname(__file__), "static"),
+}
+
+print 'settings', settings
+print
+
+
 application = tornado.web.Application([
     (r"/", MainHandler),
     (r"/auth", AuthHandler),
@@ -25,7 +35,7 @@ application = tornado.web.Application([
     # TODO: app should send image straight to S3 or some CDN, not to API
     (r"/post/image", ResalePostImageHandler),
     (r"/post/(\S+)", ResalePostViewHandler),
-])
+], **settings)
 
 if __name__ == "__main__":
     http_server = tornado.httpserver.HTTPServer(application)
@@ -33,5 +43,5 @@ if __name__ == "__main__":
     print 'listening on port 8001'
     logging.info('logger up')
     # TODO: don't autoreload in production
-#    tornado.autoreload.start() 
+   # tornado.autoreload.start() 
     tornado.ioloop.IOLoop.instance().start()

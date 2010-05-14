@@ -20,9 +20,13 @@ price_pat = re.compile(r'\d*(\.\d{0,2})?')
 _post_structure = {
     'title': str,
     'price': price_pat,
-    'image_url': optional(image_url_pat),
+    'image_url': image_url_pat,
+    'posted_to_twitter': bool,
+    'posted_to_facebook': bool,
     'location':{ 'lat': float, 'long': float },
     'short_code': optional(str),
+    'phone_number': optional(str),
+    'email_address': optional(str),
 }
 
 # Sample post for testing
@@ -47,15 +51,27 @@ class ResalePostHandler(tornado.web.RequestHandler):
         if '_id' in json: del json['_id']
         return { 'result': 'OK', 'post': json }
 
+class ResaleTemplateContext(dict):
+    """
+    Like a dictionary, but ignores non-string keys
+    """
+    def __init__(self, a_dict):
+        for k, v in a_dict.items():
+            if isinstance(k, (str, unicode)):
+                self[str(k)] = v
+
 class ResalePostViewHandler(tornado.web.RequestHandler):
     def get(self, short_code):
         resale_db.post.ensure_index([('short_code', 1)])
         post = resale_db.post.find_one({'short_code': short_code})
-        self.write(str(post))
+        # TODO: Nice 404 page
+        if not post: raise tornado.web.HTTPError(404)
+        self.render("templates/PostView.html", **ResaleTemplateContext(post))
 
+# TODO: app should send image straight to S3 or some CDN, not to API
 class ResalePostImageHandler(tornado.web.RequestHandler):
     def post(self):
-        imagepath = 'images'
+        imagepath = 'static'
         if not os.path.exists(imagepath): os.makedirs(imagepath)
         oid = ObjectId()
         path = os.path.join(imagepath, '%s.jpg' % oid)
@@ -65,6 +81,6 @@ class ResalePostImageHandler(tornado.web.RequestHandler):
         logging.info("Saved image to %s" % repr(path))
         rv = simplejson.dumps({
             'result': 'OK',
-            'image_url':'http://localhost/images/%s.jpg' % oid
+            'image_url':'http://localhost:8001/static/%s.jpg' % oid
         })
         self.write(rv)
