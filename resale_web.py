@@ -9,7 +9,7 @@ import tornado.autoreload
 logging.basicConfig(filename='/var/log/apache2/resale.log', level=logging.DEBUG)
 
 from resalepost import ResalePostHandler, ResalePostViewHandler
-from resalepost import ResalePostImageHandler
+from resalepost import ResalePostImageHandler, ResalePostSearchHandler
 
 class MainHandler(tornado.web.RequestHandler):
     def get(self):
@@ -34,6 +34,7 @@ application = tornado.web.Application([
     (r"/post", ResalePostHandler),
     # TODO: app should send image straight to S3 or some CDN, not to API
     (r"/post/image", ResalePostImageHandler),
+    (r"/post/search", ResalePostSearchHandler),
     (r"/post/(\S+)", ResalePostViewHandler),
 ], **settings)
 
@@ -43,5 +44,5 @@ if __name__ == "__main__":
     print 'listening on port 8001'
     logging.info('logger up')
     # TODO: don't autoreload in production
-   # tornado.autoreload.start() 
+    tornado.autoreload.start() 
     tornado.ioloop.IOLoop.instance().start()
