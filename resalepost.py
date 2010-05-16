@@ -71,22 +71,30 @@ class ResalePostImageHandler(tornado.web.RequestHandler):
 class ResalePostSearchHandler(tornado.web.RequestHandler):
     @chain(jsonio)
     def get(self, json):
+        """
+        Search posts using CGI arguments, e.g.:
+        http://resaleapp.com/api/post/search?lat=37&long=-122&query=couch
+        """
         # Ensure Mongo uses a geospatial index on location, then search for
-        # nearby posts with titles containing the query string.
+        # nearby posts with titles containing the query string.  PyMongo doesn't
+        # support '2d' indexes, so use Javascript to ensure the index.
+        #resale_db.post.ensureIndex({'location':'2d'})
         resale_db.eval('db.post.ensureIndex( { location : "2d" } )')
-        # TODO: get geospatial querying working!
-        #find_terms = { 'location': { '$near':
-        #    [ self.get_argument('lat'), self.get_argument('long') ]
-        #} }
-        find_terms = {}
-        if self.get_argument('query', None):
-            find_terms['title'] = re.compile(r'.*%s.*' % re.escape(
-                self.get_argument('query'),
-                re.I
-            ))
+        find_terms = { 'location': { '$near':
+            [ float(self.get_argument('lat')), float(self.get_argument('long')) ]
+        } }
         
+        # Matching on title is optional
+        if self.get_argument('query', None):
+            find_terms['title'] = re.compile(
+                r'.*%s.*' % re.escape(
+                    self.get_argument('query'),
+                ), re.I
+            )
+        
+        # TODO: Now sort by proximity to lat and long
         search_results = resale_db.post.find(find_terms).limit(20)
-        return { 'result': 'OK', 'search_results': list(search_results) }
+        return { 'result': 'OK', 'posts': list(search_results) }
 
 class ResaleTemplateContext(dict):
     """
