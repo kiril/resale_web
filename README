@@ -1,1 +1,21 @@
+= Libraries =
+
+# Tornado and Mongo prerequisites
+sudo easy_install setuptools pycurl==7.16.2.1 simplejson pymongo
+# Tornado
+wget http://www.tornadoweb.org/static/tornado-0.2.tar.gz
+tar xvf tornado-0.2.tar.gz
+cd tornado 0.2
+sudo python setup.py install
+
+You also need the latest MongoDB running (v1.4.2) for geospatial indexing.
+
+= Running the server =
+
+In the project root directory, resale_web, do
+
+python resale_web.py
+
+= Conventions =
+
 JSON methods return {'result':'OK'} or {'result':'failure', 'message':...}
