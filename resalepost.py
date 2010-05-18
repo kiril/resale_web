@@ -78,8 +78,8 @@ class ResalePostSearchHandler(tornado.web.RequestHandler):
         # Ensure Mongo uses a geospatial index on location, then search for
         # nearby posts with titles containing the query string.  PyMongo doesn't
         # support '2d' indexes, so use Javascript to ensure the index.
-        #resale_db.post.ensureIndex({'location':'2d'})
-        resale_db.eval('db.post.ensureIndex( { location : "2d" } )')
+        #resale_db.post.ensureIndex({'location':'2d', 'title':1})
+        resale_db.eval('db.post.ensureIndex( { location : "2d", title: 1 } )')
         find_terms = { 'location': { '$near':
             [ float(self.get_argument('lat')), float(self.get_argument('long')) ]
         } }
