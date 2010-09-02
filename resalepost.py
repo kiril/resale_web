@@ -30,7 +30,7 @@ _post_structure = {
 }
 
 # Sample post for testing
-{"price": "17", "image_url": "http://foo.com/foo.png", "location": {"lat": 421.0, "long": 11.9}, "title": "from_console"}
+#{"price": "17", "image_url": "http://foo.com/foo.png", "location": {"lat": 421.0, "long": 11.9}, "title": "from_console"}
 
 class ResalePostHandler(tornado.web.RequestHandler):
     @chain(jsonio, json_validate(_post_structure))

@@ -6,10 +6,11 @@ import tornado.ioloop
 import tornado.web
 import tornado.autoreload
 
-logging.basicConfig(filename='/var/log/apache2/resale.log', level=logging.DEBUG)
+logging.basicConfig(filename='resale.log', level=logging.DEBUG)
 
 from resalepost import ResalePostHandler, ResalePostViewHandler
 from resalepost import ResalePostImageHandler, ResalePostSearchHandler
+from resale_telephony import ResaleTwilioRequestHandler
 
 class MainHandler(tornado.web.RequestHandler):
     def get(self):
@@ -27,15 +28,20 @@ settings = {
 print 'settings', settings
 print
 
-
 application = tornado.web.Application([
     (r"/", MainHandler),
     (r"/auth", AuthHandler),
+    
+    # ReSale posts (things for sale or for free)
     (r"/post", ResalePostHandler),
     # TODO: app should send image straight to S3 or some CDN, not to API
     (r"/post/image", ResalePostImageHandler),
     (r"/post/search", ResalePostSearchHandler),
     (r"/post/(\S+)", ResalePostViewHandler),
+    
+    # Twilio interaction
+    (r"/twilio/request", ResaleTwilioRequestHandler),
+    
 ], **settings)
 
 if __name__ == "__main__":

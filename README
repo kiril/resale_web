@@ -1,14 +1,29 @@
+= Language =
+
+Python 2.6
+
 = Libraries =
 
 # Tornado and Mongo prerequisites
 sudo easy_install setuptools pycurl==7.16.2.1 simplejson pymongo
+
 # Tornado
-wget http://www.tornadoweb.org/static/tornado-0.2.tar.gz
-tar xvf tornado-0.2.tar.gz
-cd tornado 0.2
+wget http://github.com/downloads/facebook/tornado/tornado-1.0.1.tar.gz
+tar xvf tornado-1.0.1.tar.gz 
+cd tornado-1.0.1
 sudo python setup.py install
 
-You also need the latest MongoDB running (v1.4.2) for geospatial indexing.
+# Twilio
+wget http://github.com/twilio/twilio-python/tarball/2.0.8
+tar xzvf twilio-twilio-python-2.0.8-0-ga6f6c40.tar.gz 
+cd twilio-twilio-python-a6f6c40/
+python setup.py install
+
+# MongoDB
+wget http://fastdl.mongodb.org/linux/mongodb-linux-x86_64-1.6.2.tgz
+tar xzvf mongodb-linux-x86_64-1.6.2.tgz 
+sudo mv mongodb-linux-x86_64-1.6.2 /usr/local
+sudo ln -s -f /usr/local/mongodb-linux-x86_64-1.6.2 /usr/local/mongodb
 
 = Running the server =
 
