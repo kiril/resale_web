@@ -17,13 +17,13 @@ class ResaleTwilioRequestHandler(tornado.web.RequestHandler):
         from_phone_number = self.get_argument('From')
         to_phone_number = self.get_argument('To')
         call_status = self.get_argument('CallStatus')
-        logging.info('Receiving call from %s to %s, status %s', % (
+        logging.info('Receiving call from %s to %s, status %s' % (
             repr(from_phone_number), repr(to_phone_number), repr(call_status)
         ))
         
-        if call_status == 'queued':
+        if call_status == 'ringing':
             response = twilio.Response()
-            # National Weather Service number for testing call redirection
-            response.append(twilio.Dial("6319240517", timeLimit=45))
-            
-            self.write(response)
+            # Current-time number for testing call redirection
+            response.append(twilio.Dial("2027621401", timeLimit=45))
+            logging.info('Responding:\n%s\n', response)
+            self.write(str(response))
