@@ -25,6 +25,11 @@ tar xzvf mongodb-linux-x86_64-1.6.2.tgz
 sudo mv mongodb-linux-x86_64-1.6.2 /usr/local
 sudo ln -s -f /usr/local/mongodb-linux-x86_64-1.6.2 /usr/local/mongodb
 
+# Pymongo
+git clone git://github.com/mongodb/mongo-python-driver.git pymongo
+cd pymongo/
+sudo python setup.py install
+
 = Running the server =
 
 In the project root directory, resale_web, do
