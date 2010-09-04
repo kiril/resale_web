@@ -1,6 +1,8 @@
+# libraries
 from pymongo.son_manipulator import SONManipulator
 from pymongo.connection import Connection
 import pymongo
+import tornado.web
 
 class Datefix(SONManipulator):
     def transform_outgoing(self, obj, collection):
@@ -29,4 +31,10 @@ class Datefix(SONManipulator):
 
 mongo = Connection('localhost')
 resale_db = mongo['resale']
-resale_db.add_son_manipulator(Datefix())
+#resale_db.add_son_manipulator(Datefix())
+
+def post_with_short_code_or_404(short_code):
+    resale_db.post.ensure_index([('short_code', 1)])
+    post = resale_db.post.find_one({'short_code': short_code})
+    if not post: raise tornado.web.HTTPError(404)
+    else: return post

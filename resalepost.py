@@ -11,7 +11,7 @@ from pymongo.objectid import ObjectId
 # local
 from resaledecorators import chain, jsonio
 from json_validate import *
-from db import resale_db
+from db import resale_db, post_with_short_code_or_404
 
 # TODO: better image_url pattern
 image_url_pat = re.compile(r'http://\S+\.(jpe?g|png)')
@@ -107,8 +107,5 @@ class ResaleTemplateContext(dict):
 
 class ResalePostViewHandler(tornado.web.RequestHandler):
     def get(self, short_code):
-        resale_db.post.ensure_index([('short_code', 1)])
-        post = resale_db.post.find_one({'short_code': short_code})
-        # TODO: Nice 404 page
-        if not post: raise tornado.web.HTTPError(404)
+        post = post_with_short_code_or_404(short_code)
         self.render("templates/PostView.html", **ResaleTemplateContext(post))

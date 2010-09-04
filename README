@@ -30,6 +30,15 @@ git clone git://github.com/mongodb/mongo-python-driver.git pymongo
 cd pymongo/
 sudo python setup.py install
 
+# Dateutil
+wget http://labix.org/download/python-dateutil/python-dateutil-1.5.tar.gz
+tar xzvf python-dateutil-1.5.tar.gz 
+cd python-dateutil-1.5
+sudo python setup.py install
+
+# PyTZ
+sudo easy_install pytz
+
 = Running the server =
 
 In the project root directory, resale_web, do

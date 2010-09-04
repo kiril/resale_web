@@ -1,8 +1,13 @@
+# python
 from datetime import datetime, date
-from pymongo.objectid import ObjectId
 import functools
-import simplejson
 import logging
+import traceback
+
+# libraries
+from pymongo.objectid import ObjectId
+import simplejson
+import tornado.web
 
 def datetime_iso_8601(dt):
     """
@@ -31,9 +36,13 @@ def jsonio(method):
     def g(self):
         self.set_header("Content-Type", "text/plain")            
         try:
-            if self.request.method in ('POST', 'PUT') and self.request.body:
-                json = simplejson.loads(self.request.body)
+            if self.request.method in ('POST', 'PUT'):
+                json = simplejson.loads(self.get_argument('json'))
+                logging.info('%s <= %s' % (
+                    repr(self.request.path), repr(json)
+                ))
             else:
+                logging.info(repr(self.request.path))
                 json = {}
             
             response = method(self, json)
@@ -45,10 +54,14 @@ def jsonio(method):
                 cls=DatetimeObjectIdEncoder
             ))
         except Exception, e:
-            self.write(simplejson.dumps({
-                'result': 'failure',
-                'message':str(e)
-            }))
+            logging.error(traceback.format_exc())
+            raise tornado.web.HTTPError(
+                500,
+                simplejson.dumps({
+                    'result': 'failure',
+                    'message':str(e)
+                }),
+            )
     return g
 
 

@@ -5,12 +5,13 @@ import tornado.httpserver
 import tornado.ioloop
 import tornado.web
 import tornado.autoreload
+from tornado.web import URLSpec
 
 logging.basicConfig(filename='resale.log', level=logging.DEBUG)
 
 from resalepost import ResalePostHandler, ResalePostViewHandler
 from resalepost import ResalePostImageHandler, ResalePostSearchHandler
-from resale_telephony import ResaleTwilioRequestHandler
+from resale_telephony import ResaleTwilioRequestHandler, ResaleGetSellerPhoneNumberHandler
 
 class MainHandler(tornado.web.RequestHandler):
     def get(self):
@@ -37,6 +38,7 @@ application = tornado.web.Application([
     # TODO: app should send image straight to S3 or some CDN, not to API
     (r"/post/image", ResalePostImageHandler),
     (r"/post/search", ResalePostSearchHandler),
+    URLSpec(r"/post/get_seller_phone_number", ResaleGetSellerPhoneNumberHandler, name='get_seller_phone_number'),
     (r"/post/(\S+)", ResalePostViewHandler),
     
     # Twilio interaction

@@ -2,6 +2,55 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<!-- countdown from http://keith-wood.name/countdown.html -->
+<style type="text/css">@import "{{ static_url("css/jquery.countdown.css") }}";</style> 
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.3/jquery.min.js"></script>
+<script type="text/javascript" src="{{ static_url("js/jquery.form.js") }}"></script>
+<script type="text/javascript" src="{{ static_url("js/json2.js") }}"></script>
+<script type="text/javascript" src="{{ static_url("js/md5-min.js") }}"></script>
+<script type="text/javascript" src="{{ static_url("js/resale.js") }}"></script>
+<!-- countdown from http://keith-wood.name/countdown.html -->
+<script type="text/javascript" src="{{ static_url("js/jquery.countdown.js") }}"></script>
+<script type="text/javascript">
+
+
+$(function() {
+    // TODO: validation
+    jsonAjaxForm(
+        $('#get_seller_phone_number_form'),
+        {
+            // Hash buyer phone number before sending over network
+            beforeSubmit: function(form_dict) {
+                // hex_md5 from http://pajhome.org.uk/crypt/md5/
+                form_dict['buyer_phone_number_hash'] = hex_md5(
+                    form_dict['buyer_phone_number']
+                );
+                
+                delete form_dict['buyer_phone_number'];
+            },
+            success: function(json) {
+                if ('seller_phone_number' in json) {
+                    $('#seller_phone_number')
+                    .html('<p>' + json['seller_phone_number'] + '</p>')
+                    .fadeIn(500);
+                } else if ('wait_seconds' in json) {
+                    $('#seller_phone_number')
+                    .html('<p>Please wait for an anonymized number to become available</p>')
+                    .fadeIn(500);
+                    
+                    var expires = new Date();
+                    expires.setSeconds(expires.getSeconds() + json['wait_seconds']);
+                    $('#wait_seconds').countdown({until: expires});
+                }
+            },
+            error: function(json, text_status) {
+                alert('failure!: ' + JSON.stringify(json));
+            }
+        }
+    );
+});
+
+</script>
 <title>Resale | {{ escape(title) }}</title>
 </head>
 
@@ -11,5 +60,17 @@
 <p>&nbsp;</p>
 <p><img class="post_image" src="{{ image_url }}" /></p>
 <p><span class="permalink_label">Permalink:</span> <a class="post_url" href="{{ url }}">{{ escape(url) }}</a></p>
+<div class="get_seller_phone_number">
+    <form name="get_seller_phone_number_form" id="get_seller_phone_number_form" action="{{ reverse_url('get_seller_phone_number') }}">
+        <fieldset>
+            <label for="buyer_phone_number" id="buyer_phone_number_label">Your phone number</label>
+            <input type="text" name="buyer_phone_number" id="buyer_phone_number" size="30" />
+            <input type="hidden" name="short_code" value="{{ short_code }}" />
+            <input type="submit" name="submit" class="button" id="get_seller_phone_number_submit" value="Call the seller" />  
+        </fieldset>
+    </form>
+    <div id="seller_phone_number" style="display:none"></div>
+    <div id="wait_seconds"></div>
+</div>
 </body>
 </html>
