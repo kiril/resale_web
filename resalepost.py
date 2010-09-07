@@ -2,6 +2,8 @@
 import logging
 import re
 import os
+import socket
+import urlparse
 
 # libraries
 import simplejson
@@ -12,6 +14,7 @@ from pymongo.objectid import ObjectId
 from resaledecorators import chain, jsonio
 from json_validate import *
 from db import resale_db, post_with_short_code_or_404
+import resale_settings
 
 # TODO: better image_url pattern
 image_url_pat = re.compile(r'http://\S+\.(jpe?g|png)')
@@ -45,8 +48,13 @@ class ResalePostHandler(tornado.web.RequestHandler):
         # TODO: shorter short_code, save short_code in Mongo, ensure short_code
         # isn't 'image' or another interfering string
         short_code = str(oid)
-        json['url'] = 'http://localhost:8001/post/%s' % short_code
         json['short_code'] = short_code
+        hostport = self.request.host.split(":")
+        # TODO: better way to determine host and port
+        json['url'] = urlparse.urljoin(
+            'http://%s:%s' % (hostport[0], hostport[1]),
+            self.reverse_url('view_post', short_code)
+        )
         resale_db.post.save(json)
         if '_id' in json: del json['_id']
         return { 'result': 'OK', 'post': json }
@@ -62,9 +70,10 @@ class ResalePostImageHandler(tornado.web.RequestHandler):
         # TODO: non-blocking IO?
         f.write(self.request.body)
         logging.info("Saved image to %s" % repr(path))
+        hostport = self.request.host.split(":")
         rv = simplejson.dumps({
             'result': 'OK',
-            'image_url':'http://localhost:8001/static/%s.jpg' % oid
+            'image_url':'http://%s:%s/static/%s.jpg' % (hostport[0], hostport[1], oid),
         })
         self.write(rv)
 

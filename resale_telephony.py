@@ -23,15 +23,32 @@ class ResaleTwilioRequestHandler(tornado.web.RequestHandler):
         """
         from_phone_number = self.get_argument('From')
         to_phone_number = self.get_argument('To')
+        buyer_phone_number_hash = md5.new(from_phone_number).hexdigest()
         call_status = self.get_argument('CallStatus')
-        logging.info('Receiving call from %s to %s, status %s' % (
-            repr(from_phone_number), repr(to_phone_number), repr(call_status)
+        logging.info('Receiving call from %s to %s, hash %s, status %s' % (
+            repr(from_phone_number), repr(to_phone_number), repr(buyer_phone_number_hash), repr(call_status)
         ))
         
         if call_status == 'ringing':
+            resale_db.phone_map.ensure_index([('buyer_phone_number_hash', 1)])
+            # TODO: also add some logging info to phone_map, see if we can do it in
+            # one round trip to DB
+            phone_map = resale_db.phone_map.find_one({
+                'buyer_phone_number_hash': buyer_phone_number_hash,
+                'twilio_phone_number.phone_number': to_phone_number,
+                'expires': { '$lt': resale_time.utcnow() },
+            }, {
+                'post': True,
+            })
+            
+            post = resale_db.dereference(phone_map['post'])
+            
+            # TODO: if no phone_map, speak error message to user
+            
             response = twilio.Response()
             # Current-time phone number for testing call redirection
-            response.append(twilio.Dial("2027621401", timeLimit=45))
+            #response.append(twilio.Dial("2027621401", timeLimit=45))
+            response.append(twilio.Dial(post['phone_number']))
             logging.info('Responding:\n%s\n', response)
             self.write(str(response))
 

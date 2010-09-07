@@ -30,19 +30,19 @@ print 'settings', settings
 print
 
 application = tornado.web.Application([
-    (r"/", MainHandler),
-    (r"/auth", AuthHandler),
+    URLSpec(r"/", MainHandler),
+    URLSpec(r"/auth", AuthHandler),
     
     # ReSale posts (things for sale or for free)
-    (r"/post", ResalePostHandler),
+    URLSpec(r"/post", ResalePostHandler, name="post"),
     # TODO: app should send image straight to S3 or some CDN, not to API
-    (r"/post/image", ResalePostImageHandler),
-    (r"/post/search", ResalePostSearchHandler),
+    URLSpec(r"/post/image", ResalePostImageHandler),
+    URLSpec(r"/post/search", ResalePostSearchHandler),
     URLSpec(r"/post/get_seller_phone_number", ResaleGetSellerPhoneNumberHandler, name='get_seller_phone_number'),
-    (r"/post/(\S+)", ResalePostViewHandler),
+    URLSpec(r"/post/(\S+)", ResalePostViewHandler, name="view_post"),
     
     # Twilio interaction
-    (r"/twilio/request", ResaleTwilioRequestHandler),
+    URLSpec(r"/twilio/request", ResaleTwilioRequestHandler),
     
 ], **settings)
 
