@@ -2,7 +2,6 @@
 import logging
 import re
 import os
-import socket
 import urlparse
 
 # libraries
@@ -49,10 +48,8 @@ class ResalePostHandler(tornado.web.RequestHandler):
         # isn't 'image' or another interfering string
         short_code = str(oid)
         json['short_code'] = short_code
-        hostport = self.request.host.split(":")
-        # TODO: better way to determine host and port
         json['url'] = urlparse.urljoin(
-            'http://%s:%s' % (hostport[0], hostport[1]),
+            'http://%s' % resale_settings.hostname,
             self.reverse_url('view_post', short_code)
         )
         resale_db.post.save(json)
@@ -70,10 +67,9 @@ class ResalePostImageHandler(tornado.web.RequestHandler):
         # TODO: non-blocking IO?
         f.write(self.request.body)
         logging.info("Saved image to %s" % repr(path))
-        hostport = self.request.host.split(":")
         rv = simplejson.dumps({
             'result': 'OK',
-            'image_url':'http://%s:%s/static/%s.jpg' % (hostport[0], hostport[1], oid),
+            'image_url':'http://%s/static/%s.jpg' % (resale_settings.hostname, oid),
         })
         self.write(rv)
 

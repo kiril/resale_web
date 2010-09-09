@@ -3,6 +3,7 @@ import logging
 import md5
 import datetime
 import math
+import re
 
 # libraries
 import tornado.web
@@ -17,12 +18,27 @@ import resale_settings
 import resale_time
 
 class ResaleTwilioRequestHandler(tornado.web.RequestHandler):
+    def strip_incoming_number(self, phone_number, non_decimal = re.compile(r'[^\d.]+')):
+        """
+        Twilio tells us about phone numbers formatted like
+        "+17187539654" -- strip it to match what the user
+        originally sent us
+        """
+        # strip +, then strip 1, then remove all non-numeric
+        return non_decimal.sub('', phone_number.lstrip('+').lstrip('1'))
+    
     def post(self):
         """
         Receive a Twilio request, return a TwiML response
         """
-        from_phone_number = self.get_argument('From')
-        to_phone_number = self.get_argument('To')
+        from_phone_number = self.strip_incoming_number(
+            self.get_argument('From')
+        )
+        
+        to_phone_number = self.strip_incoming_number(
+            self.get_argument('To')
+        )
+        
         buyer_phone_number_hash = md5.new(from_phone_number).hexdigest()
         call_status = self.get_argument('CallStatus')
         logging.info('Receiving call from %s to %s, hash %s, status %s' % (
@@ -33,17 +49,22 @@ class ResaleTwilioRequestHandler(tornado.web.RequestHandler):
             resale_db.phone_map.ensure_index([('buyer_phone_number_hash', 1)])
             # TODO: also add some logging info to phone_map, see if we can do it in
             # one round trip to DB
+            twilio_phone_number = resale_db.twilio_phone_number.find_one({
+                'phone_number': to_phone_number,
+            })
+            
             phone_map = resale_db.phone_map.find_one({
                 'buyer_phone_number_hash': buyer_phone_number_hash,
-                'twilio_phone_number.phone_number': to_phone_number,
-                'expires': { '$lt': resale_time.utcnow() },
+                'twilio_phone_number.$id': twilio_phone_number['_id'],
+                'expires': { '$gt': resale_time.utcnow() },
             }, {
                 'post': True,
             })
             
             post = resale_db.dereference(phone_map['post'])
             
-            # TODO: if no phone_map, speak error message to user
+            # TODO: if no phone_map, speak error message to user, or latest phone_map
+            # is expired
             
             response = twilio.Response()
             # Current-time phone number for testing call redirection
@@ -68,6 +89,8 @@ class ResaleGetSellerPhoneNumberHandler(tornado.web.RequestHandler):
         
         # Get the buyer's active phone_maps, which associate the buyer's phone
         # number with a Twilio phone number and a seller's phone number
+        # TODO: deny this whole flow if seller didn't enter phone number -
+        # prevent user from even clicking 'Call' in Javascript
         utcnow = resale_time.utcnow()
         buyer_phone_maps = list(resale_db.phone_map.find({
             'buyer_phone_number_hash': json['buyer_phone_number_hash'],

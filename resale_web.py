@@ -48,8 +48,8 @@ application = tornado.web.Application([
 
 if __name__ == "__main__":
     http_server = tornado.httpserver.HTTPServer(application)
-    http_server.listen(8001)
-    print 'listening on port 8001'
+    http_server.listen(80)
+    print 'listening on port 80'
     logging.info('logger up')
     # TODO: don't autoreload in production
     tornado.autoreload.start() 
