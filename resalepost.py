@@ -42,16 +42,29 @@ class ResalePostHandler(tornado.web.RequestHandler):
             "Posts should be modified with HTTP PUT, not POST"
         )
         
-        oid = resale_db.post.save(json)
+        # short_code is just one row with the current largest serial number
+        short_code = str(int(resale_db.eval("""
+            db.runCommand({
+                findAndModify: 'short_code',
+                upsert: true,
+                update: { $inc: { short_code: 1 } },
+                query: { short_code : { $gt :  -1 } },
+                new: true
+            })
+        """)['value']['short_code']))
         
-        # TODO: shorter short_code, save short_code in Mongo, ensure short_code
-        # isn't 'image' or another interfering string
-        short_code = str(oid)
+        logging.debug('short_code: %s' % short_code)
         json['short_code'] = short_code
+        resale_db.post.ensure_index('short_code', unique=True)
+        
         json['url'] = urlparse.urljoin(
             'http://%s' % resale_settings.hostname,
             self.reverse_url('view_post', short_code)
         )
+        
+        # TODO: client can insert whatever it wants in JSON and we'll insert it
+        # into DB. Wouldn't it be cool if json_validate also had function to
+        # make a JSON obj that *only* has required or optional elements?
         resale_db.post.save(json)
         if '_id' in json: del json['_id']
         return { 'result': 'OK', 'post': json }
@@ -62,6 +75,7 @@ class ResalePostImageHandler(tornado.web.RequestHandler):
         imagepath = 'static'
         if not os.path.exists(imagepath): os.makedirs(imagepath)
         oid = ObjectId()
+        # TODO: in (near-impossible) case of collision, append another OID to path
         path = os.path.join(imagepath, '%s.jpg' % oid)
         f = file(path, 'w+')
         # TODO: non-blocking IO?
@@ -83,7 +97,6 @@ class ResalePostSearchHandler(tornado.web.RequestHandler):
         # Ensure Mongo uses a geospatial index on location, then search for
         # nearby posts with titles containing the query string.  PyMongo doesn't
         # support '2d' indexes, so use Javascript to ensure the index.
-        #resale_db.post.ensureIndex({'location':'2d', 'title':1})
         resale_db.eval('db.post.ensureIndex( { location : "2d", title: 1 } )')
         find_terms = { 'location': { '$near':
             [ float(self.get_argument('lat')), float(self.get_argument('long')) ]
@@ -97,7 +110,7 @@ class ResalePostSearchHandler(tornado.web.RequestHandler):
                 ), re.I
             )
         
-        # TODO: Now sort by proximity to lat and long
+        # TODO: Has Mongo already sorted results by proximity to lat and long?
         search_results = resale_db.post.find(find_terms).limit(20)
         return { 'result': 'OK', 'posts': list(search_results) }
 
